@@ -1,0 +1,11 @@
+development:
+  adapter: postgresql
+  encoding: unicode
+  database: mps_development
+  user: vic
+
+production:
+  adapter: postgresql
+  encoding: unicode
+  database: mps_production
+  user: vic
