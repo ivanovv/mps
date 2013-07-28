@@ -40,7 +40,10 @@ gem 'unicorn'
 gem "thinking-sphinx"
 
 # Use Capistrano for deployment
-# gem 'capistrano', group: :development
+gem 'capistrano', group: :development
 
 # Use debugger
 # gem 'debugger', group: [:development, :test]
+
+
+gem 'rack-jsonp-middleware'
