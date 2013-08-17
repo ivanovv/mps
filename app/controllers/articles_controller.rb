@@ -2,7 +2,7 @@ class ArticlesController < ApplicationController
   respond_to :json, :js
 
   URLS = { 'text' => 'texts',  'persona' => 'personalii', 'thesaurus' => 'glossariy' }
-  BASE_URL = 'http://gerome.ru/mp2/'
+  BASE_URL = 'http://gerome.ru/mp3/'
 
   def index
     @articles = Article.search params[:q]
