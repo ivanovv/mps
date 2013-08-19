@@ -17,7 +17,14 @@ class ArticlesController < ApplicationController
     )
 
     @articles = @articles.to_a
-    @articles.each {|a| a.url = BASE_URL + URLS[(a.article_type || 'text')] + '/' + (a.url || '') }
+    @articles.each do|a|
+      a.url = BASE_URL + URLS[(a.article_type || 'text')] + '/' + (a.url || '')
+      a.article_type = case a.article_type
+                         when 'persona' then "Персоналии"
+                         when 'thesaurus' then "Глоссарий"
+                         when 'text' then "Тексты"
+                       end
+    end
     respond_with @articles, :callback => params[:callback]
   end
 

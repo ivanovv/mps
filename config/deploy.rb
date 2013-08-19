@@ -34,7 +34,7 @@ end
 
 set (:unicorn_conf) {"#{deploy_to}/current/config/unicorn.rb"}
 set (:unicorn_pid) {"#{shared_path}/pids/unicorn.pid"}
-set (:unicorn_start_cmd) {"(cd #{deploy_to}/current; bundle exec unicorn_rails -Dc #{unicorn_conf})"}
+set (:unicorn_start_cmd) {"(cd #{deploy_to}/current; bundle exec unicorn_rails -Dc #{unicorn_conf} -E production)"}
 
 set :bundle_cmd, 'bundle'
 
