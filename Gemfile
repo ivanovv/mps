@@ -47,3 +47,4 @@ gem 'capistrano', group: :development
 
 
 gem 'rack-jsonp-middleware'
+gem 'rvm-capistrano'
