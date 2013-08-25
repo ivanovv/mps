@@ -1,4 +1,4 @@
-server_address = 'ec2-54-217-232-182.eu-west-1.compute.amazonaws.com'
+server_address = '37.139.29.122'
 set :application, 'mps'
 set :repository, 'https://github.com/ivanovv/mps.git'
 set :deploy_via, :remote_cache
@@ -6,7 +6,7 @@ set :deploy_via, :remote_cache
 
 set :user, 'deploy'
 set :use_sudo, false
-set (:deploy_to) { '/home/deploy/code/mps' }
+set (:deploy_to) { "/home/#{user}/apps/#{application}" }
 
 set :scm, :git
 set :ssh_options, { :forward_agent => true }
@@ -16,16 +16,21 @@ role :app, server_address # This may be the same as your `Web` server
 role :db, server_address, :primary => true        # This is where Rails migrations will run
 
 require 'bundler/capistrano'
-require 'rvm/capistrano'
+set :bundle_flags, '--deployment --quiet --binstubs'
 
-set :rvm_type, :system
-set :rvm_ruby_string, '2.0.0-p195'
+set :default_environment, {
+    'PATH' => '/usr/local/rbenv/shims:/usr/local/rbenv/bin:$PATH'
+}
 
-
-#require 'thinking_sphinx/deploy/capistrano'
-
-
+require 'thinking_sphinx/capistrano'
 after 'deploy:update_code', :copy_database_config
+after 'deploy:finalize_update', :symlink_nginx_config
+after 'deploy', 'deploy:cleanup'
+
+
+task :symlink_nginx_config, roles: :app do
+  run "sudo ln -nfs #{release_path}/config/mps.nginx /etc/nginx/sites-enabled/mps"
+end
 
 task :copy_database_config, roles => :app do
   db_config = "#{shared_path}/database.yml"

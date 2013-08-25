@@ -1,5 +1,5 @@
 upstream app_server {
-  server unix:/home/deploy/code/mps/current/tmp/.unicorn.sock fail_timeout=0;
+  server unix:/home/deploy/apps/mps/current/tmp/.unicorn.sock fail_timeout=0;
 }
 
 server {
@@ -8,7 +8,7 @@ server {
   #client_max_body_size 4G;
 
   keepalive_timeout 5;
-  root /home/deploy/code/mps/current/public;
+  root /home/deploy/apps/mps/current/public;
 
   try_files $uri/index.html $uri.html $uri @app;
 
@@ -29,7 +29,7 @@ server {
 
   error_page 500 502 503 504 /500.html;
   location = /500.html {
-    root /home/deploy/code/mps/current/public;
+    root /home/deploy/apps/mps/current/public;
   }
 }
 

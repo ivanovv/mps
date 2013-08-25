@@ -1,6 +1,6 @@
 worker_processes 1
 
-app_folder = "/home/deploy/code/mps/current"
+app_folder = "/home/deploy/apps/mps/current"
 
 # Since Unicorn is never exposed to outside clients, it does not need to
 # run on the standard HTTP port (80), there is no reason to start Unicorn
