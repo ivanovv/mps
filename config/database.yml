@@ -2,10 +2,10 @@ development:
   adapter: postgresql
   encoding: unicode
   database: mps_development
-  user: vic
+  username: vic
 
 production:
   adapter: postgresql
   encoding: unicode
   database: mps_production
-  user: vic
+  username: vic
