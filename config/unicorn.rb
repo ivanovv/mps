@@ -1,6 +1,6 @@
 worker_processes 1
 
-app_folder = "/home/deploy/apps/mps/current"
+app_folder = '/home/deploy/apps/mps/current'
 
 # Since Unicorn is never exposed to outside clients, it does not need to
 # run on the standard HTTP port (80), there is no reason to start Unicorn
@@ -15,11 +15,11 @@ working_directory app_folder # available in 0.94.0+
 
 # listen on both a Unix domain socket and a TCP port,
 # we use a shorter backlog for quicker failover when busy
-listen "#{app_folder}/tmp/.unicorn.sock", :backlog => 64
-listen 8080, :tcp_nopush => true
+listen "#{app_folder}/tmp/sockets/.unicorn.sock", backlog: 64
+listen 8080, tcp_nopush: true
 
 # nuke workers after 30 seconds instead of 60 seconds (the default)
-timeout 10
+timeout 30
 
 # feel free to point this anywhere accessible on the filesystem
 pid "#{app_folder}/tmp/pids/unicorn.pid"
@@ -33,30 +33,32 @@ stdout_path "#{app_folder}/log/unicorn.stdout.log"
 # combine Ruby 2.0.0dev or REE with "preload_app true" for memory savings
 # http://rubyenterpriseedition.com/faq.html#adapt_apps_for_cow
 preload_app true
-GC.respond_to?(:copy_on_write_friendly=) and
-  GC.copy_on_write_friendly = true
 
-# Enable this flag to have unicorn test client connections by writing the
-# beginning of the HTTP headers before calling the application.  This
-# prevents calling the application for connections that have disconnected
-# while queued.  This is only guaranteed to detect clients on the same
-# host unicorn runs on, and unlikely to detect disconnects even on a
-# fast LAN.
-check_client_connection false
+
+before_exec do |server|
+  ENV['BUNDLE_GEMFILE'] = "#{app_path + '/current'}/Gemfile"
+end
 
 before_fork do |server, worker|
-  # the following is highly recomended for Rails + "preload_app true"
-  # as there's no need for the master process to hold a connection
-  defined?(ActiveRecord::Base) and
-    ActiveRecord::Base.connection.disconnect!
+  old_pid = "#{app_path}/shared/tmp/pids/unicorn.pid.oldbin"
+
+  if File.exists?(old_pid) && server.pid != old_pid
+    begin
+      Process.kill('QUIT', File.read(old_pid).to_i)
+    rescue Errno::ENOENT, Errno::ESRCH
+      # someone else did our job for us
+    end
+  end
+  ActiveRecord::Base.connection.disconnect!
 end
 
 after_fork do |server, worker|
-  # per-process listener ports for debugging/admin/migrations
-  # addr = "127.0.0.1:#{9293 + worker.nr}"
-  # server.listen(addr, :tries => -1, :delay => 5, :tcp_nopush => true)
-
-  # the following is *required* for Rails + "preload_app true",
-  defined?(ActiveRecord::Base) and
-    ActiveRecord::Base.establish_connection
+  Signal.trap 'TERM' do
+    puts 'Unicorn worker intercepting TERM and doing nothing. Wait for master to send QUIT'
+  end
+  Rails.cache.reset if Rails.cache.respond_to? :reset
+  ActiveRecord::Base.establish_connection
 end
+
+GC.respond_to?(:copy_on_write_friendly=) and
+  GC.copy_on_write_friendly = true

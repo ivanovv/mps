@@ -1,61 +1,64 @@
-server_address = '37.139.29.122'
 set :application, 'mps'
-set :repository, 'https://github.com/ivanovv/mps.git'
-set :deploy_via, :remote_cache
-
-
-set :user, 'deploy'
-set :use_sudo, false
-set (:deploy_to) { "/home/#{user}/apps/#{application}" }
-
 set :scm, :git
-set :ssh_options, { :forward_agent => true }
-
-server server_address, :app, :web, :db, :primary => true
-
-require 'bundler/capistrano'
-set :bundle_flags, '--deployment --quiet --binstubs'
-
-set :default_environment, {
-    'PATH' => '/usr/local/rbenv/shims:/usr/local/rbenv/bin:$PATH'
-}
-
-require 'thinking_sphinx/capistrano'
-after 'deploy:update_code', :copy_database_config
-after 'deploy:finalize_update', :symlink_nginx_config
-after 'deploy', 'deploy:cleanup'
+set :repo_url, 'https://github.com/ivanovv/mps.git'
+set :log_level, :info
 
 
-task :symlink_nginx_config, roles: :app do
-  run "sudo ln -nfs #{release_path}/config/mps.nginx /etc/nginx/sites-enabled/mps"
-end
+set :linked_files, %w{config/database.yml}
+set :linked_dirs, %w{log tmp/pids tmp/cache tmp/sockets vendor/bundle public/system}
 
-task :copy_database_config, roles => :app do
-  db_config = "#{shared_path}/database.yml"
-  run "cp #{db_config} #{release_path}/config/database.yml"
-end
+set :unicorn_config_path, 'config/unicorn.rb'
+set :unicorn_pid, "#{shared_path}/tmp/pids/unicorn.pid"
 
-set (:unicorn_conf) {"#{deploy_to}/current/config/unicorn.rb"}
-set (:unicorn_pid) {"#{shared_path}/pids/unicorn.pid"}
-set (:unicorn_start_cmd) {"(cd #{deploy_to}/current; bundle exec unicorn_rails -Dc #{unicorn_conf} -E production)"}
+# set :use_sudo, false
+set :deploy_to, '/home/deploy/apps/mps'
 
-set :bundle_cmd, 'bundle'
+set :bundle_jobs, 4
+set :bundle_binstubs, nil
+set :pty,  false
 
+set :assets_roles, [:web, :app]
 
-# - for unicorn - #
 namespace :deploy do
-  desc 'Start application'
-  task :start, :roles => :app do
-    run unicorn_start_cmd
+
+  namespace :nginx do
+    desc 'Reload nginx configuration'
+    task :reload do
+      on roles [:web] do
+        execute 'sudo service nginx reload'
+      end
+    end
+
+    desc 'Symlink Nginx config (requires sudo)'
+    task :symlink_config do
+      on roles [:web] do
+        within release_path do
+          sudo :cp, '-f', "config/nginx.#{fetch(:stage)}.conf", '/etc/nginx/nginx.conf'
+        end
+      end
+    end
+  end
+
+  desc 'Restart application'
+  task :restart do
+    on roles(:app) do
+      execute :sudo, 'service unicorn upgrade'
+    end
   end
 
   desc 'Stop application'
-  task :stop, :roles => :app do
-    run "[ -f #{unicorn_pid} ] && kill -QUIT `cat #{unicorn_pid}`"
+  task :stop do
+    on roles(:app), in: :sequence, wait: 5 do
+      if test "[ -f #{fetch(:unicorn_pid)} ]"
+        execute :kill, "-s QUIT `cat #{fetch(:unicorn_pid)}`"
+      end
+    end
   end
 
-  desc 'Restart Application'
-  task :restart, :roles => :app do
-    run "[ -f #{unicorn_pid} ] && kill -USR2 `cat #{unicorn_pid}` || #{unicorn_start_cmd}"
-  end
+  after :finishing, :cleanup
 end
+
+
+after 'deploy:updated', 'deploy:nginx:symlink_config'
+after 'deploy:updated', 'deploy:nginx:reload'
+after 'deploy:publishing', 'deploy:restart'
