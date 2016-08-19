@@ -1,31 +1,24 @@
 class ArticlesController < ApplicationController
-  respond_to :json, :js
+  respond_to :json
 
-  URLS = { 'text' => 'texts',  'persona' => 'personalii', 'thesaurus' => 'glossariy' }
-  BASE_URL = 'http://app.papush.ru/'
+  before_action :set_excerpter, only: :index
 
   def index
-    @articles = Article.search params[:q]
-    #@articles.context.panes << ThinkingSphinx::Panes::ExcerptsPane
-    @excerpter = ThinkingSphinx::Excerpter.new(
-        'article_core',
-        params[:q],
-        {
-            :before_match => '<span class="app_search_word">',
-            :after_match  => '</span>'
-        }
-    )
+    @articles = ArticleDecorator.decorate_collection(Article.search(params[:q]).to_a)
+    respond_with @articles, callback: params[:callback]
+  end
 
-    @articles = @articles.to_a
-    @articles.each do|a|
-      a.url = BASE_URL + URLS[(a.article_type || 'text')] + '/' + (a.url || '')
-      a.article_type = case a.article_type
-                         when 'persona' then "Персоналии"
-                         when 'thesaurus' then "Глоссарий"
-                         when 'text' then "Тексты"
-                       end
-    end
-    respond_with @articles, :callback => params[:callback]
+  private
+
+  def set_excerpter
+    @excerpter = ThinkingSphinx::Excerpter.new(
+      'article_core',
+      params[:q],
+      {
+        before_match: '<span class="app_search_word">',
+        after_match: '</span>'
+      }
+    )
   end
 
 end
