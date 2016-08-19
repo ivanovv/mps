@@ -1,6 +1,7 @@
 worker_processes 1
 
-app_folder = '/home/deploy/apps/mps/current'
+app_path = '/home/deploy/apps/mps'
+app_folder = "#{app_path}/current"
 
 # Since Unicorn is never exposed to outside clients, it does not need to
 # run on the standard HTTP port (80), there is no reason to start Unicorn
@@ -36,7 +37,7 @@ preload_app true
 
 
 before_exec do |server|
-  ENV['BUNDLE_GEMFILE'] = "#{app_path + '/current'}/Gemfile"
+  ENV['BUNDLE_GEMFILE'] = "#{app_folder}/Gemfile"
 end
 
 before_fork do |server, worker|
