@@ -7,7 +7,6 @@ gem 'mysql2'
 gem 'sass-rails', '~> 5.0'
 gem 'uglifier', '>= 1.3.0'
 gem 'jbuilder', '~> 2.5'
-gem 'rack-jsonp-middleware'
 
 gem 'draper', '3.0.0.pre1'
 gem 'responders'
