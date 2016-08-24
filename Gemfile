@@ -13,6 +13,7 @@ gem 'responders'
 
 gem 'unicorn'
 gem 'thinking-sphinx'
+gem 'searchkick', '~> 1.3'
 
 group :development do
   gem 'capistrano', '3.4'
