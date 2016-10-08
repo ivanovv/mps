@@ -1,17 +1,8 @@
 class ArticleDecorator < Draper::Decorator
   delegate_all
 
-  URLS = {'text' => 'texts', 'persona' => 'personalii', 'thesaurus' => 'glossariy'}
+  URLS = { 'text' => 'texts', 'persona' => 'personalii', 'thesaurus' => 'glossariy' }
   BASE_URL = 'http://app.papush.ru/'
-
-  # Define presentation-specific methods here. Helpers are accessed through
-  # `helpers` (aka `h`). You can override attributes, for example:
-  #
-  #   def created_at
-  #     helpers.content_tag :span, class: 'time' do
-  #       object.created_at.strftime("%a %m/%d/%y")
-  #     end
-  #   end
 
   def url
     BASE_URL + URLS[(object.article_type || 'text')] + '/' + (object.url || '')
@@ -20,12 +11,21 @@ class ArticleDecorator < Draper::Decorator
   def article_type
     case object.article_type
       when 'persona' then
-        "Персоналии"
+        'Персоналии'
       when 'thesaurus' then
-        "Глоссарий"
+        'Глоссарий'
       when 'text' then
-        "Тексты"
+        'Тексты'
     end
+  end
+
+  def parent_link
+    object.article_type == 'persona' ? 'personas.html' : 'thesaurus.html'
+  end
+
+  def excerpts
+    hit = context.find {|h| h['_id'] == object.id.to_s}
+    ['', hit['highlight']['content.analyzed'], ''].join(' &#8230; ').html_safe
   end
 
 end
